@@ -1,8 +1,8 @@
+import crypto from "crypto";
 import { eventBus } from "../events/event-bus";
-
 import { PolicyDecision, ToolExecutionRequest } from "./policy-types";
-
-import { blockedTools } from "./default-policies";
+import { getPolicyState } from "./policy-store";
+import { createApproval } from "./approval-store";
 
 export async function evaluatePolicy(
   request: ToolExecutionRequest,
@@ -13,18 +13,17 @@ export async function evaluatePolicy(
     timestamp: new Date().toISOString(),
   });
 
-  if (blockedTools.includes(request.toolName)) {
-    const decision = {
-      allowed: false,
+  const policyState = getPolicyState();
 
+  if (policyState.blockedTools.includes(request.toolName)) {
+    const decision = {
+      status: "denied" as const,
       reason: `Tool "${request.toolName}" is blocked by policy`,
     };
 
     eventBus.emit("policy.denied", {
       ...decision,
-
       toolName: request.toolName,
-
       timestamp: new Date().toISOString(),
     });
 
@@ -39,16 +38,13 @@ export async function evaluatePolicy(
 
     if (expression.includes("process") || expression.includes("require")) {
       const decision = {
-        allowed: false,
-
+        status: "denied" as const,
         reason: "Suspicious calculator input detected",
       };
 
       eventBus.emit("policy.denied", {
         ...decision,
-
         toolName: request.toolName,
-
         timestamp: new Date().toISOString(),
       });
 
@@ -56,8 +52,34 @@ export async function evaluatePolicy(
     }
   }
 
+  if (request.toolName === "get_weather") {
+    const approvalId = crypto.randomUUID();
+
+    createApproval({
+      id: approvalId,
+      toolName: request.toolName,
+      arguments: request.arguments,
+      reason: "Weather access requires approval",
+      createdAt: new Date().toISOString(),
+    });
+
+    const decision = {
+      status: "requires_approval" as const,
+      approvalId,
+      reason: "Human approval required",
+    };
+
+    eventBus.emit("policy.approval_requested", {
+      approvalId,
+      toolName: request.toolName,
+      timestamp: new Date().toISOString(),
+    });
+
+    return decision;
+  }
+
   const decision = {
-    allowed: true,
+    status: "allowed" as const,
   };
 
   eventBus.emit("policy.allowed", {

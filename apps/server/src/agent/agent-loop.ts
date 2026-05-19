@@ -1,17 +1,18 @@
 import { groq } from "./groq-client";
-
 import { createMcpClient } from "../mcp/mcp-client";
 import { evaluatePolicy } from "../policy/policy-engine";
 
 export async function runAgent(userMessage: string) {
   const mcp = await createMcpClient();
   const toolsResponse = await mcp.listTools();
-
   const tools = toolsResponse.tools.map((tool) => ({
     type: "function" as const,
+
     function: {
       name: tool.name,
+
       description: tool.description || "",
+
       parameters: tool.inputSchema,
     },
   }));
@@ -27,6 +28,7 @@ export async function runAgent(userMessage: string) {
     ],
 
     tools,
+
     tool_choice: "auto",
   });
 
@@ -34,7 +36,6 @@ export async function runAgent(userMessage: string) {
 
   if (message.tool_calls?.length) {
     const toolCall = message.tool_calls[0];
-
     if (toolCall.type !== "function") {
       throw new Error("Unsupported tool call type");
     }
@@ -49,14 +50,21 @@ export async function runAgent(userMessage: string) {
       arguments: toolArgs,
     });
 
-    if (!policyDecision.allowed) {
+    if (policyDecision.status === "denied") {
       return {
         response: `Tool execution blocked: ${policyDecision.reason}`,
       };
     }
 
+    if (policyDecision.status === "requires_approval") {
+      return {
+        response: `Execution pending approval (${policyDecision.approvalId})`,
+      };
+    }
+
     const toolResult = await mcp.callTool({
       name: toolName,
+
       arguments: toolArgs,
     });
 
@@ -73,7 +81,9 @@ export async function runAgent(userMessage: string) {
 
         {
           role: "tool",
+
           tool_call_id: toolCall.id,
+
           content: JSON.stringify(toolResult.content),
         },
       ],
