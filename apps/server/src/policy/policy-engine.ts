@@ -3,6 +3,7 @@ import { eventBus } from "../events/event-bus";
 import { PolicyDecision, ToolExecutionRequest } from "./policy-types";
 import { getPolicyState } from "./policy-store";
 import { createApproval } from "./approval-store";
+import { addPolicyLog } from "../observability/log-store";
 
 export async function evaluatePolicy(
   request: ToolExecutionRequest,
@@ -20,6 +21,13 @@ export async function evaluatePolicy(
       status: "denied" as const,
       reason: `Tool "${request.toolName}" is blocked by policy`,
     };
+
+    addPolicyLog({
+      type: "denied",
+      toolName: request.toolName,
+      reason: decision.reason,
+      timestamp: new Date().toISOString(),
+    });
 
     eventBus.emit("policy.denied", {
       ...decision,
@@ -41,6 +49,13 @@ export async function evaluatePolicy(
         status: "denied" as const,
         reason: "Suspicious calculator input detected",
       };
+
+      addPolicyLog({
+        type: "denied",
+        toolName: request.toolName,
+        reason: decision.reason,
+        timestamp: new Date().toISOString(),
+      });
 
       eventBus.emit("policy.denied", {
         ...decision,
@@ -69,6 +84,13 @@ export async function evaluatePolicy(
       reason: "Human approval required",
     };
 
+    addPolicyLog({
+      type: "approval_required",
+      toolName: request.toolName,
+      reason: decision.reason,
+      timestamp: new Date().toISOString(),
+    });
+
     eventBus.emit("policy.approval_requested", {
       approvalId,
       toolName: request.toolName,
@@ -81,6 +103,12 @@ export async function evaluatePolicy(
   const decision = {
     status: "allowed" as const,
   };
+
+  addPolicyLog({
+    type: "allowed",
+    toolName: request.toolName,
+    timestamp: new Date().toISOString(),
+  });
 
   eventBus.emit("policy.allowed", {
     toolName: request.toolName,
