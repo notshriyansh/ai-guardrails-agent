@@ -23,106 +23,158 @@ function App() {
   }, [events]);
 
   return (
-    <div className="min-h-screen bg-black text-white p-8">
-      <h1 className="text-4xl font-bold mb-6">AI Guardrails Dashboard</h1>
+    <div className="min-h-screen bg-zinc-950 text-white">
+      <div className="max-w-7xl mx-auto p-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-10">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight">
+              AI Guardrails Dashboard
+            </h1>
 
-      <div className="mb-6">
-        Status:{" "}
-        <span className={connected ? "text-green-400" : "text-red-400"}>
-          {connected ? "Connected" : "Disconnected"}
-        </span>
-      </div>
+            <p className="text-zinc-400 mt-2">
+              MCP orchestration, runtime governance, and realtime policy
+              enforcement
+            </p>
+          </div>
 
-      <div className="border border-zinc-800 rounded-lg p-4 mb-6">
-        <h2 className="text-xl font-semibold mb-4">Policy Controls</h2>
-
-        <div className="flex gap-2">
-          <input
-            value={toolName}
-            onChange={(e) => setToolName(e.target.value)}
-            placeholder="Tool name"
-            className="bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white"
-          />
-
-          <button
-            onClick={() => blockTool(toolName)}
-            className="bg-red-600 px-4 py-2 rounded"
+          <div
+            className={`px-4 py-2 rounded-full text-sm font-medium border ${
+              connected
+                ? "bg-green-500/10 text-green-400 border-green-500/30"
+                : "bg-red-500/10 text-red-400 border-red-500/30"
+            }`}
           >
-            Block
-          </button>
-
-          <button
-            onClick={() => unblockTool(toolName)}
-            className="bg-green-600 px-4 py-2 rounded"
-          >
-            Unblock
-          </button>
+            {connected ? "Connected" : "Disconnected"}
+          </div>
         </div>
-      </div>
 
-      <div className="border border-zinc-800 rounded-lg p-4 mb-6">
-        <h2 className="text-xl font-semibold mb-4">Pending Approvals</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="lg:col-span-2 border border-zinc-800 bg-zinc-900/40 rounded-2xl p-6">
+            <h2 className="text-xl font-semibold mb-5">Policy Controls</h2>
 
-        <div className="space-y-2">
-          {approvals.map((approval) => (
-            <div
-              key={approval.id}
-              className="border border-zinc-700 rounded p-3"
-            >
-              <div>Tool: {approval.toolName}</div>
-
-              <div className="text-sm text-zinc-400">{approval.reason}</div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                value={toolName}
+                onChange={(e) => setToolName(e.target.value)}
+                placeholder="Enter tool name..."
+                className="flex-1 bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-3 outline-none focus:border-zinc-500"
+              />
 
               <button
-                onClick={() => approveRequest(approval.id)}
-                className="mt-2 bg-blue-600 px-3 py-1 rounded"
+                onClick={() => blockTool(toolName)}
+                className="bg-red-600 hover:bg-red-500 transition px-5 py-3 rounded-xl font-medium"
               >
-                Approve
+                Block
+              </button>
+
+              <button
+                onClick={() => unblockTool(toolName)}
+                className="bg-green-600 hover:bg-green-500 transition px-5 py-3 rounded-xl font-medium"
+              >
+                Unblock
               </button>
             </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="border border-zinc-800 rounded-lg p-4 mb-6">
-        <h2 className="text-xl font-semibold mb-4">Observability</h2>
-
-        <div className="grid grid-cols-3 gap-4 text-sm">
-          <div className="border border-zinc-700 rounded p-3">
-            <div className="font-semibold mb-2">Conversations</div>
-
-            <div>{logs?.conversations?.length ?? 0}</div>
           </div>
 
-          <div className="border border-zinc-700 rounded p-3">
-            <div className="font-semibold mb-2">Tool Executions</div>
+          <div className="border border-zinc-800 bg-zinc-900/40 rounded-2xl p-6">
+            <h2 className="text-xl font-semibold mb-5">Observability</h2>
 
-            <div>{logs?.tools?.length ?? 0}</div>
-          </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border border-zinc-800 rounded-xl p-3">
+                <span className="text-zinc-400">Conversations</span>
 
-          <div className="border border-zinc-700 rounded p-3">
-            <div className="font-semibold mb-2">Policy Decisions</div>
-
-            <div>{logs?.policies?.length ?? 0}</div>
-          </div>
-        </div>
-      </div>
-
-      <div className="border border-zinc-800 rounded-lg p-4">
-        <h2 className="text-xl font-semibold mb-4">Realtime Events</h2>
-
-        <div className="space-y-2 max-h-[500px] overflow-auto">
-          {events.map((event, index) => (
-            <div key={index} className="border border-zinc-700 rounded p-3">
-              <div className="font-mono text-sm text-green-400">
-                {event.type}
+                <span className="font-bold text-lg">
+                  {logs?.conversations?.length ?? 0}
+                </span>
               </div>
 
-              <pre className="text-xs mt-2 overflow-auto">
-                {JSON.stringify(event.payload ?? event, null, 2)}
-              </pre>
+              <div className="flex items-center justify-between border border-zinc-800 rounded-xl p-3">
+                <span className="text-zinc-400">Tool Calls</span>
+
+                <span className="font-bold text-lg">
+                  {logs?.tools?.length ?? 0}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between border border-zinc-800 rounded-xl p-3">
+                <span className="text-zinc-400">Policy Decisions</span>
+
+                <span className="font-bold text-lg">
+                  {logs?.policies?.length ?? 0}
+                </span>
+              </div>
             </div>
-          ))}
+          </div>
+        </div>
+
+        <div className="border border-zinc-800 bg-zinc-900/40 rounded-2xl p-6 mb-6">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-xl font-semibold">Pending Approvals</h2>
+
+            <span className="text-sm text-zinc-500">
+              {approvals.length} pending
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            {approvals.length === 0 && (
+              <div className="text-zinc-500 text-sm">
+                No pending approval requests
+              </div>
+            )}
+
+            {approvals.map((approval) => (
+              <div
+                key={approval.id}
+                className="border border-zinc-800 rounded-xl p-4 flex items-center justify-between"
+              >
+                <div>
+                  <div className="font-medium">{approval.toolName}</div>
+
+                  <div className="text-sm text-zinc-400 mt-1">
+                    {approval.reason}
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => approveRequest(approval.id)}
+                  className="bg-blue-600 hover:bg-blue-500 transition px-4 py-2 rounded-lg text-sm font-medium"
+                >
+                  Approve
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="border border-zinc-800 bg-zinc-900/40 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-xl font-semibold">Realtime Events</h2>
+
+            <span className="text-sm text-zinc-500">
+              {events.length} events
+            </span>
+          </div>
+
+          <div className="space-y-3 max-h-137.5 overflow-auto pr-2">
+            {[...events].reverse().map((event, index) => (
+              <div
+                key={index}
+                className="border border-zinc-800 rounded-xl p-4"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-mono text-sm text-green-400">
+                    {event.type}
+                  </div>
+                </div>
+
+                <pre className="text-xs text-zinc-300 overflow-auto">
+                  {JSON.stringify(event.payload ?? event, null, 2)}
+                </pre>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
