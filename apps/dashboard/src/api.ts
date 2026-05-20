@@ -47,3 +47,9 @@ export async function approveRequest(approvalId: string) {
     }),
   });
 }
+
+export async function getLogs() {
+  const response = await fetch(`${API_BASE}/logs`);
+
+  return response.json();
+}

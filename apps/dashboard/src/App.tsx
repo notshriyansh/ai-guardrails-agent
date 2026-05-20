@@ -1,14 +1,25 @@
 import { useEffect, useState } from "react";
 import { useWebSocket } from "./hooks/useWebSocket";
-import { approveRequest, blockTool, getApprovals, unblockTool } from "./api";
+import {
+  approveRequest,
+  blockTool,
+  getApprovals,
+  unblockTool,
+  getLogs,
+} from "./api";
 
 function App() {
   const { events, connected } = useWebSocket("ws://localhost:8080");
   const [toolName, setToolName] = useState("");
   const [approvals, setApprovals] = useState<any[]>([]);
+  const [logs, setLogs] = useState<any>(null);
 
   useEffect(() => {
     getApprovals().then(setApprovals);
+  }, [events]);
+
+  useEffect(() => {
+    getLogs().then(setLogs);
   }, [events]);
 
   return (
@@ -70,6 +81,30 @@ function App() {
               </button>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="border border-zinc-800 rounded-lg p-4 mb-6">
+        <h2 className="text-xl font-semibold mb-4">Observability</h2>
+
+        <div className="grid grid-cols-3 gap-4 text-sm">
+          <div className="border border-zinc-700 rounded p-3">
+            <div className="font-semibold mb-2">Conversations</div>
+
+            <div>{logs?.conversations?.length ?? 0}</div>
+          </div>
+
+          <div className="border border-zinc-700 rounded p-3">
+            <div className="font-semibold mb-2">Tool Executions</div>
+
+            <div>{logs?.tools?.length ?? 0}</div>
+          </div>
+
+          <div className="border border-zinc-700 rounded p-3">
+            <div className="font-semibold mb-2">Policy Decisions</div>
+
+            <div>{logs?.policies?.length ?? 0}</div>
+          </div>
         </div>
       </div>
 
