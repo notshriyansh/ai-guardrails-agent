@@ -9,7 +9,7 @@ import {
 } from "./api";
 
 function App() {
-  const { events, connected } = useWebSocket("ws://localhost:8080");
+  const { events, connected } = useWebSocket(import.meta.env.VITE_WS_URL);
   const [toolName, setToolName] = useState("");
   const [approvals, setApprovals] = useState<any[]>([]);
   const [logs, setLogs] = useState<any>(null);
