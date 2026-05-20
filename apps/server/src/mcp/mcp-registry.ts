@@ -1,14 +1,14 @@
 export const mcpServers = [
   {
     id: "core-tools",
-    command: "npx",
-    args: ["tsx", "src/index.ts"],
+    command: "node",
+    args: ["dist/index.js"],
     cwd: "../mcp-server",
   },
   {
     id: "notes-tools",
-    command: "npx",
-    args: ["tsx", "src/index.ts"],
+    command: "node",
+    args: ["dist/index.js"],
     cwd: "../notes-mcp-server",
   },
   {
