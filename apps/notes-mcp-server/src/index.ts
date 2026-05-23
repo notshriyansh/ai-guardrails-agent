@@ -6,12 +6,18 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 
+import {
+  deleteMemory,
+  getRecentMemories,
+  saveMemory,
+  searchMemories,
+} from "./memory-store.js";
+
 const server = new Server(
   {
-    name: "notes-mcp-server",
-    version: "1.0.0",
+    name: "memory-mcp-server",
+    version: "2.0.0",
   },
-
   {
     capabilities: {
       tools: {},
@@ -19,148 +25,134 @@ const server = new Server(
   },
 );
 
-const notes: string[] = [];
+server.setRequestHandler(ListToolsRequestSchema, async () => {
+  return {
+    tools: [
+      {
+        name: "save_memory",
+        description: "Store a memory into long term semantic memory",
 
-server.setRequestHandler(
-  ListToolsRequestSchema,
+        inputSchema: {
+          type: "object",
 
-  async () => {
+          properties: {
+            text: {
+              type: "string",
+            },
+          },
+
+          required: ["text"],
+        },
+      },
+
+      {
+        name: "search_memory",
+        description: "Search semantic memories using similarity search",
+
+        inputSchema: {
+          type: "object",
+
+          properties: {
+            query: {
+              type: "string",
+            },
+          },
+
+          required: ["query"],
+        },
+      },
+
+      {
+        name: "get_recent_memories",
+        description: "Retrieve recent memories",
+
+        inputSchema: {
+          type: "object",
+          properties: {},
+        },
+      },
+
+      {
+        name: "delete_memory",
+        description: "Delete memory by id",
+
+        inputSchema: {
+          type: "object",
+
+          properties: {
+            id: {
+              type: "string",
+            },
+          },
+
+          required: ["id"],
+        },
+      },
+    ],
+  };
+});
+
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const toolName = request.params.name;
+  const args = request.params.arguments ?? {};
+
+  if (toolName === "save_memory") {
+    const result = await saveMemory(String(args.text));
+
     return {
-      tools: [
+      content: [
         {
-          name: "add_note",
-          description: "Add a note to memory",
-          inputSchema: {
-            type: "object",
-            properties: {
-              note: {
-                type: "string",
-              },
-            },
-            required: ["note"],
-            additionalProperties: false,
-          },
-        },
-
-        {
-          name: "list_notes",
-          description: "List all notes",
-          inputSchema: {
-            type: "object",
-            properties: {},
-          },
-        },
-
-        {
-          name: "delete_note",
-          description: "Delete a note by text",
-          inputSchema: {
-            type: "object",
-            properties: {
-              note: {
-                type: "string",
-              },
-            },
-            required: ["note"],
-          },
-        },
-
-        {
-          name: "clear_notes",
-          description: "Remove all notes",
-          inputSchema: {
-            type: "object",
-            properties: {},
-            additionalProperties: false,
-          },
+          type: "text",
+          text: JSON.stringify(result, null, 2),
         },
       ],
     };
-  },
-);
+  }
 
-server.setRequestHandler(
-  CallToolRequestSchema,
+  if (toolName === "search_memory") {
+    const result = await searchMemories(String(args.query));
 
-  async (request) => {
-    const toolName = request.params.name;
-    const args = request.params.arguments ?? {};
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  }
 
-    if (toolName === "add_note") {
-      const note = String(args.note);
+  if (toolName === "get_recent_memories") {
+    const result = getRecentMemories();
 
-      notes.push(note);
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  }
 
-      return {
-        content: [
-          {
-            type: "text",
+  if (toolName === "delete_memory") {
+    const deleted = deleteMemory(String(args.id));
 
-            text: `Note added: ${note}`,
-          },
-        ],
-      };
-    }
+    return {
+      content: [
+        {
+          type: "text",
+          text: deleted ? "Memory deleted" : "Memory not found",
+        },
+      ],
+    };
+  }
 
-    if (toolName === "list_notes") {
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(notes, null, 2),
-          },
-        ],
-      };
-    }
-
-    if (toolName === "delete_note") {
-      const note = String(args.note);
-
-      const index = notes.indexOf(note);
-
-      if (index >= 0) {
-        notes.splice(index, 1);
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Deleted note: ${note}`,
-            },
-          ],
-        };
-      }
-
-      return {
-        content: [
-          {
-            type: "text",
-
-            text: "Note not found",
-          },
-        ],
-      };
-    }
-
-    if (toolName === "clear_notes") {
-      notes.length = 0;
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: "All notes cleared",
-          },
-        ],
-      };
-    }
-
-    throw new Error(`Unknown tool: ${toolName}`);
-  },
-);
+  throw new Error(`Unknown tool: ${toolName}`);
+});
 
 const transport = new StdioServerTransport();
 
 await server.connect(transport);
 
-console.error("Notes MCP server running");
+console.error("Memory MCP server running");
