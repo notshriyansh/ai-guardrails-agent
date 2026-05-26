@@ -1,4 +1,5 @@
 import { Annotation } from "@langchain/langgraph";
+
 import { BaseMessage } from "@langchain/core/messages";
 
 export const AgentStateAnnotation = Annotation.Root({
@@ -15,6 +16,11 @@ export const AgentStateAnnotation = Annotation.Root({
   retrievedMemories: Annotation<string[]>({
     reducer: (x, y) => x.concat(y),
     default: () => [],
+  }),
+
+  plannedTool: Annotation<string | undefined>({
+    reducer: (_, y) => y,
+    default: () => undefined,
   }),
 
   selectedTool: Annotation<string | undefined>({

@@ -7,8 +7,11 @@ import { reasoningNode } from "./nodes/reasoning-node";
 import { policyNode } from "./nodes/policy-node";
 import { toolNode } from "./nodes/tool-node";
 import { responseNode } from "./nodes/response-node";
+import { plannerNode } from "./nodes/planner-node";
 
 const workflow: any = new StateGraph(AgentStateAnnotation);
+
+workflow.addNode("planner", plannerNode);
 
 workflow.addNode("memory", memoryNode);
 
@@ -20,7 +23,9 @@ workflow.addNode("tool", toolNode);
 
 workflow.addNode("response", responseNode);
 
-workflow.addEdge(START, "memory");
+workflow.addEdge(START, "planner");
+
+workflow.addEdge("planner", "memory");
 
 workflow.addEdge("memory", "reasoning");
 
