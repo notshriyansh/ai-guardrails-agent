@@ -12,14 +12,22 @@ export const mcpServers = [
     cwd: "../notes-mcp-server",
   },
   {
-    id: "filesystem-tools",
-    command: "cmd",
-    args: [
-      "/c",
-      "npx",
-      "@modelcontextprotocol/server-filesystem",
-      process.cwd(),
-    ],
-    cwd: process.cwd(),
-  },
+  id: "filesystem-tools",
+
+  command: process.platform === "win32" ? "cmd" : "npx",
+
+  args:
+    process.platform === "win32"
+      ? [
+          "/c",
+          "npx",
+          "@modelcontextprotocol/server-filesystem",
+          process.cwd(),
+        ]
+      : [
+          "@modelcontextprotocol/server-filesystem",
+          process.cwd(),
+        ],
+  cwd: process.cwd(),
+},
 ];
