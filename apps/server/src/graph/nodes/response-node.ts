@@ -1,11 +1,9 @@
-import {
-  AgentState,
-  AgentStateAnnotation,
-} from "../state";
+import { AgentStateAnnotation } from "../state";
+
 import { groq } from "../../agent/groq-client";
 
 export async function responseNode(
-  state: AgentState,
+  state: typeof AgentStateAnnotation.State,
 ): Promise<Partial<typeof AgentStateAnnotation.State>> {
   console.log("Running response node");
 
@@ -13,13 +11,33 @@ export async function responseNode(
     return {};
   }
 
+  let toolOutput = "";
+
+  try {
+    toolOutput =
+      (state.toolResult as any)?.content?.[0]?.text ||
+      JSON.stringify(state.toolResult);
+  } catch (error) {
+    console.error("Failed to parse tool output:", error);
+  }
+
+  console.log("Parsed tool output:", toolOutput);
+
   const completion = await groq.chat.completions.create({
     model: "llama-3.3-70b-versatile",
 
     messages: [
       {
         role: "system",
-        content: "Generate a helpful final response.",
+
+        content: `
+You are an AI assistant.
+
+Answer the user using the provided tool output.
+
+If the tool output contains useful information,
+answer directly and clearly.
+`,
       },
 
       {
@@ -29,7 +47,7 @@ export async function responseNode(
 
       {
         role: "assistant",
-        content: `Tool result: ${JSON.stringify(state.toolResult)}`,
+        content: `Tool output: ${toolOutput}`,
       },
     ],
   });

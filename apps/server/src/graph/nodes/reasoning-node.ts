@@ -1,66 +1,148 @@
 import { HumanMessage } from "@langchain/core/messages";
-import {
-  AgentState,
-  AgentStateAnnotation,
-} from "../state";
+
+import { AgentStateAnnotation } from "../state";
+
 import { groq } from "../../agent/groq-client";
+
 import { getAllTools } from "../../mcp/mcp-client";
 
 export async function reasoningNode(
-  state: AgentState,
+  state: typeof AgentStateAnnotation.State,
 ): Promise<Partial<typeof AgentStateAnnotation.State>> {
   console.log("Running reasoning node");
 
-  const tools = (await getAllTools()).map((tool) => ({
-    type: "function" as const,
+  const tools = await getAllTools();
 
-    function: {
-      name: tool.name,
-      description: tool.description || "",
-      parameters: tool.inputSchema,
-    },
-  }));
+  console.log(
+  "Available tools:",
+  JSON.stringify(tools, null, 2),
+);
+
+  const toolDescriptions = tools
+    .map(
+      (tool) => `
+Tool Name: ${tool.name}
+Description: ${tool.description}
+Schema: ${JSON.stringify(tool.inputSchema)}
+`,
+    )
+    .join("\n");
 
   const completion = await groq.chat.completions.create({
     model: "llama-3.3-70b-versatile",
+    response_format: {
+      type: "json_object",
+    },
 
     messages: [
-      {
-        role: "system",
+  {
+    role: "system",
 
-        content:
-          "You are a governed AI agent. Use tools when appropriate.",
-      },
+    content: `
+You are an AI orchestration agent.
 
-      {
-        role: "user",
-        content: state.userMessage,
-      },
-    ],
+You may choose tools when appropriate.
 
-    tools,
-    tool_choice: "auto",
+Retrieved memories:
+
+${state.retrievedMemories.join("\n")}
+
+Available tools:
+
+${toolDescriptions}
+
+IMPORTANT:
+
+Respond ONLY with valid JSON.
+
+If no tool is needed:
+
+{
+  "response": "your response"
+}
+
+If a tool IS needed:
+
+{
+  "tool": "tool_name",
+  "arguments": {
+    "key": "value"
+  }
+}
+`,
+  },
+
+  {
+    role: "user",
+    content: state.userMessage,
+  },
+],
   });
 
-  const message = completion.choices[0].message;
+  const raw = completion.choices[0].message.content;
 
-  if (!message.tool_calls?.length) {
+  if (!raw) {
     return {
-      finalResponse: message.content || "No response generated",
+      finalResponse: "No response generated",
     };
   }
 
-  const toolCall = message.tool_calls[0];
+  let parsed: any;
 
-  if (toolCall.type !== "function") {
-    throw new Error("Unsupported tool call type");
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    console.error("Failed to parse reasoning output:", raw);
+
+    return {
+      finalResponse: "Failed to parse model response",
+    };
+  }
+
+  if (!parsed.tool) {
+    const selectedTool =
+  state.plannedTool || parsed.tool;
+
+  if (!selectedTool) {
+    return {
+      finalResponse:
+        parsed.response || "No response generated",
+    };
+}
+
+let toolArgs = parsed.arguments || {};
+
+if (
+  selectedTool === "save_memory" &&
+  !toolArgs.text
+) {
+  toolArgs = {
+    text: state.userMessage,
+  };
+}
+
+if (
+  selectedTool === "search_memory" &&
+  !toolArgs.query
+) {
+  toolArgs = {
+    query: state.userMessage,
+  };
+}
+
+return {
+  selectedTool,
+  toolArgs,
+  messages: [
+    ...state.messages,
+    new HumanMessage(state.userMessage),
+  ],
+};
   }
 
   return {
-    selectedTool: toolCall.function.name,
-
-    toolArgs: JSON.parse(toolCall.function.arguments || "{}"),
-
+    selectedTool: parsed.tool,
+    toolArgs: parsed.arguments || {},
     messages: [
       ...state.messages,
       new HumanMessage(state.userMessage),
