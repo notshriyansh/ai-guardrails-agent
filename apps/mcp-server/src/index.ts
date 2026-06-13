@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -7,6 +8,10 @@ import {
 import { calculatorTool } from "./tools/calculator.tool";
 import { weatherTool } from "./tools/weather.tool";
 import { jokeTool } from "./tools/joke.tool";
+import {
+  getLatestCommitsTool,
+  getRepoInfoTool,
+} from "./tools/github.tool";
 
 const server = new Server(
   {
@@ -59,6 +64,57 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {},
         },
       },
+      {
+        name: "get_repo_info",
+
+        description:
+          "Get GitHub repository information",
+
+        inputSchema: {
+          type: "object",
+
+          properties: {
+            owner: {
+              type: "string",
+            },
+
+            repo: {
+              type: "string",
+            },
+          },
+
+          required: [
+            "owner",
+            "repo",
+          ],
+        },
+      },
+
+      {
+        name: "get_latest_commits",
+
+        description:
+          "Get latest GitHub commits",
+
+        inputSchema: {
+          type: "object",
+
+          properties: {
+            owner: {
+              type: "string",
+            },
+
+            repo: {
+              type: "string",
+            },
+          },
+
+          required: [
+            "owner",
+            "repo",
+          ],
+        },
+      },
     ],
   };
 });
@@ -104,6 +160,65 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         {
           type: "text",
           text: JSON.stringify(result),
+        },
+      ],
+    };
+  }
+
+    if (name === "get_repo_info") {
+    const result =
+      await getRepoInfoTool({
+        owner: String(
+          args?.owner,
+        ),
+
+        repo: String(
+          args?.repo,
+        ),
+      });
+
+    return {
+      content: [
+        {
+          type: "text",
+
+          text: JSON.stringify(
+            result,
+            null,
+            2,
+          ),
+        },
+      ],
+    };
+  }
+
+  if (
+    name ===
+    "get_latest_commits"
+  ) {
+    const result =
+      await getLatestCommitsTool(
+        {
+          owner: String(
+            args?.owner,
+          ),
+
+          repo: String(
+            args?.repo,
+          ),
+        },
+      );
+
+    return {
+      content: [
+        {
+          type: "text",
+
+          text: JSON.stringify(
+            result,
+            null,
+            2,
+          ),
         },
       ],
     };

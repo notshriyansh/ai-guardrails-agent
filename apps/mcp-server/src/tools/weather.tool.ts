@@ -1,17 +1,45 @@
-import { z } from "zod";
+import axios from "axios";
+import "dotenv/config";
 
-export const weatherSchema = z.object({
-  city: z.string(),
-});
+export async function weatherTool({
+  city,
+}: {
+  city: string;
+}) {
+  const apiKey =
+    process.env.WEATHER_API_KEY;
 
-export type WeatherInput = z.infer<typeof weatherSchema>;
+  if (!apiKey) {
+    throw new Error(
+      "Missing WEATHER_API_KEY",
+    );
+  }
 
-export async function weatherTool(input: WeatherInput) {
-  const validated = weatherSchema.parse(input);
+  const response = await axios.get(
+    "https://api.weatherapi.com/v1/current.json",
+    {
+      params: {
+        key: apiKey,
+
+        q: city,
+      },
+    },
+  );
 
   return {
-    city: validated.city,
-    temperature: 28,
-    condition: "Sunny",
+    city:
+      response.data.location.name,
+    region:
+      response.data.location.region,
+    country:
+      response.data.location.country,
+    temperature:
+      response.data.current.temp_c,
+    condition:
+      response.data.current
+        .condition.text,
+    humidity:
+      response.data.current
+        .humidity,
   };
 }
