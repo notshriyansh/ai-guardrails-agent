@@ -68,7 +68,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         name: "get_repo_info",
 
         description:
-          "Get GitHub repository information",
+          "Retrieve repository metadata from GitHub including stars, forks, issues, description and repository URL.",
 
         inputSchema: {
           type: "object",
@@ -94,7 +94,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         name: "get_latest_commits",
 
         description:
-          "Get latest GitHub commits",
+          "Retrieve the latest commits from a GitHub repository including commit message, author and SHA.",
 
         inputSchema: {
           type: "object",
@@ -138,18 +138,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 
   if (name === "get_weather") {
-    const result = await weatherTool({
-      city: String(args?.city),
-    });
+    try {
+      const result = await weatherTool({
+        city: String(args?.city),
+      });
 
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(result),
-        },
-      ],
-    };
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result),
+          },
+        ],
+      };
+    } catch (error) {
+      console.error(
+        "WEATHER TOOL FAILED:",
+        error,
+      );
+
+      throw error;
+    }
   }
 
   if (name === "tell_joke") {

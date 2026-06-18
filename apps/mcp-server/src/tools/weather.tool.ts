@@ -9,6 +9,21 @@ export async function weatherTool({
   const apiKey =
     process.env.WEATHER_API_KEY;
 
+  console.log(
+    "Weather API key exists:",
+    !!apiKey,
+  );
+
+  console.log(
+    "Weather API key length:",
+    apiKey?.length,
+  );
+
+  console.log(
+    "Weather city:",
+    city,
+  );
+
   if (!apiKey) {
     throw new Error(
       "Missing WEATHER_API_KEY",
@@ -20,7 +35,6 @@ export async function weatherTool({
     {
       params: {
         key: apiKey,
-
         q: city,
       },
     },
