@@ -298,11 +298,20 @@ function App() {
                   </div>
 
                   <button
-                    onClick={() =>
-                      approveRequest(
-                        approval.id,
-                      )
-                    }
+                    onClick={async () => {
+                      const result =
+                        await approveRequest(
+                          approval.id,
+                        );
+
+                      const weather =
+                        result?.result?.content?.[0]
+                          ?.text;
+
+                      if (weather) {
+                        setAgentResponse(weather);
+                      }
+                    }}
                     className="bg-blue-600 hover:bg-blue-500 transition px-4 py-2 rounded-lg text-sm font-medium"
                   >
                     Approve

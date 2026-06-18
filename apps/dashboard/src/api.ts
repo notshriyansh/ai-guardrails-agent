@@ -53,21 +53,22 @@ export async function getApprovals() {
 export async function approveRequest(
   approvalId: string,
 ) {
-  await fetch(
-    `${API_BASE}/approvals/approve`,
-    {
-      method: "POST",
-
-      headers: {
-        "Content-Type":
-          "application/json",
+  const response =
+    await fetch(
+      `${API_BASE}/approvals/approve`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+        body: JSON.stringify({
+          approvalId,
+        }),
       },
+    );
 
-      body: JSON.stringify({
-        approvalId,
-      }),
-    },
-  );
+  return response.json();
 }
 
 export async function getLogs() {
