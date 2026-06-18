@@ -41,7 +41,10 @@ Schema: ${JSON.stringify(tool.inputSchema)}
     content: `
 You are an AI orchestration agent.
 
-You may choose tools when appropriate.
+You have access to tools.
+
+When a user's request can be answered using a tool,
+you MUST choose the most appropriate tool.
 
 Retrieved memories:
 
@@ -51,23 +54,30 @@ Available tools:
 
 ${toolDescriptions}
 
-IMPORTANT:
+Tool Usage Guidelines:
+
+- Use get_weather for weather questions.
+- Use calculator for mathematical calculations.
+- Use get_repo_info when asked about a GitHub repository.
+- Use get_latest_commits when asked about recent commits.
+- Use save_memory when the user asks you to remember something.
+- Use search_memory when the user asks about something remembered previously.
 
 Respond ONLY with valid JSON.
 
-If no tool is needed:
-
-{
-  "response": "your response"
-}
-
-If a tool IS needed:
+If a tool is required:
 
 {
   "tool": "tool_name",
   "arguments": {
-    "key": "value"
+    ...
   }
+}
+
+If no tool is required:
+
+{
+  "response": "answer"
 }
 `,
   },
@@ -80,6 +90,11 @@ If a tool IS needed:
   });
 
   const raw = completion.choices[0].message.content;
+
+  console.log(
+    "Reasoning output:",
+    raw,
+  );
 
   if (!raw) {
     return {
@@ -99,15 +114,14 @@ If a tool IS needed:
     };
   }
 
-  if (!parsed.tool) {
-    const selectedTool =
-  state.plannedTool || parsed.tool;
+  const selectedTool =
+  parsed.tool || state.plannedTool;
 
-  if (!selectedTool) {
-    return {
-      finalResponse:
-        parsed.response || "No response generated",
-    };
+if (!selectedTool) {
+  return {
+    finalResponse:
+      parsed.response || "No response generated",
+  };
 }
 
 let toolArgs = parsed.arguments || {};
@@ -138,14 +152,5 @@ return {
     new HumanMessage(state.userMessage),
   ],
 };
-  }
 
-  return {
-    selectedTool: parsed.tool,
-    toolArgs: parsed.arguments || {},
-    messages: [
-      ...state.messages,
-      new HumanMessage(state.userMessage),
-    ],
-  };
 }

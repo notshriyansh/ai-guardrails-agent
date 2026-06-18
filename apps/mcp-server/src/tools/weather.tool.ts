@@ -1,33 +1,15 @@
 import axios from "axios";
 import "dotenv/config";
 
-export async function weatherTool({
-  city,
-}: {
-  city: string;
-}) {
-  const apiKey =
-    process.env.WEATHER_API_KEY;
+export async function weatherTool({ city }: { city: string }) {
+  const apiKey = process.env.WEATHER_API_KEY;
 
-  console.log(
-    "Weather API key exists:",
-    !!apiKey,
-  );
+  console.log("Weather API key length:", apiKey?.length);
 
-  console.log(
-    "Weather API key length:",
-    apiKey?.length,
-  );
-
-  console.log(
-    "Weather city:",
-    city,
-  );
+  console.log("Weather city:", city);
 
   if (!apiKey) {
-    throw new Error(
-      "Missing WEATHER_API_KEY",
-    );
+    throw new Error("Missing WEATHER_API_KEY");
   }
 
   const response = await axios.get(
@@ -41,19 +23,11 @@ export async function weatherTool({
   );
 
   return {
-    city:
-      response.data.location.name,
-    region:
-      response.data.location.region,
-    country:
-      response.data.location.country,
-    temperature:
-      response.data.current.temp_c,
-    condition:
-      response.data.current
-        .condition.text,
-    humidity:
-      response.data.current
-        .humidity,
+    city: response.data.location.name,
+    region: response.data.location.region,
+    country: response.data.location.country,
+    temperature: response.data.current.temp_c,
+    condition: response.data.current.condition.text,
+    humidity: response.data.current.humidity,
   };
 }

@@ -27,5 +27,24 @@ export async function plannerNode(
     };
   }
 
+  if (
+    message.includes("github") ||
+    message.includes("repo") ||
+    message.includes("repository")
+  ) {
+    return {
+      plannedTool: "get_repo_info",
+    };
+  }
+
+  if (
+    message.includes("commit") ||
+    message.includes("latest commits")
+  ) {
+    return {
+      plannedTool: "get_latest_commits",
+    };
+  }
+
   return {};
 }

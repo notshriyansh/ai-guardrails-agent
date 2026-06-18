@@ -75,6 +75,17 @@ async function bootstrap() {
     });
   });
 
+  eventBus.on(
+    "approval.execution.completed",
+    (payload) => {
+      websocket.broadcast({
+        type:
+          "approval.execution.completed",
+        payload,
+      });
+    },
+  );
+
   setInterval(() => {
     eventBus.emit("log", {
       message: "Backend heartbeat event",

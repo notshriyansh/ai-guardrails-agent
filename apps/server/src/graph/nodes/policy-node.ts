@@ -3,6 +3,7 @@ import {
   AgentStateAnnotation,
 } from "../state";
 import { evaluatePolicy } from "../../policy/policy-engine";
+import { addPendingExecution } from "../../policy/pending-execution-store";
 
 export async function policyNode(
   state: AgentState,
@@ -25,6 +26,13 @@ export async function policyNode(
   }
 
   if (decision.status === "requires_approval") {
+    addPendingExecution({
+      approvalId: decision.approvalId,
+      selectedTool: state.selectedTool,
+      toolArgs: state.toolArgs || {},
+      userMessage: state.userMessage,
+    });
+
     return {
       requiresApproval: true,
       finalResponse: `Execution requires approval (${decision.approvalId})`,

@@ -7,6 +7,14 @@ export async function toolNode(
 ): Promise<Partial<typeof AgentStateAnnotation.State>> {
   console.log("Running tool execution node");
 
+  if (state.finalResponse) {
+    console.log(
+      "Skipping tool execution because final response already exists",
+    );
+
+    return {};
+  }
+
   if (!state.selectedTool) {
     console.log("No selected tool");
 
@@ -19,21 +27,35 @@ export async function toolNode(
     return {};
   }
 
-  console.log("Executing tool:", state.selectedTool);
+  try {
+    console.log("Executing tool:", state.selectedTool);
 
-  console.log("Tool args:", state.toolArgs);
+    console.log("Tool args:", state.toolArgs);
 
-  const result = await executeTool(
-    state.selectedTool,
-    state.toolArgs || {},
-  );
+    const result = await executeTool(
+      state.selectedTool,
+      state.toolArgs || {},
+    );
 
-  console.log(
-    "Raw tool result:",
-    JSON.stringify(result, null, 2),
-  );
+    console.log(
+      "Tool result:",
+      JSON.stringify(result, null, 2),
+    );
 
-  return {
-    toolResult: result,
-  };
+    return {
+      toolResult: result,
+    };
+  } catch (error) {
+    console.error(
+      "Tool execution failed:",
+      error,
+    );
+
+    return {
+      finalResponse:
+        error instanceof Error
+          ? error.message
+          : "Tool execution failed",
+    };
+  }
 }
