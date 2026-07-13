@@ -65,18 +65,18 @@ export async function getAllTools() {
 
 export async function executeTool(
   toolName: string,
-
   args: Record<string, unknown>,
 ) {
   const entry = toolRegistry.get(toolName);
 
   if (!entry) {
-    throw new Error(`Unknown tool: ${toolName}`);
+    throw new Error(
+      `Unknown tool: ${toolName}`,
+    );
   }
 
   return entry.client.callTool({
     name: toolName,
-
     arguments: args ?? {},
   });
 }

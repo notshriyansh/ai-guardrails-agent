@@ -28,7 +28,9 @@ export const AgentStateAnnotation = Annotation.Root({
     default: () => undefined,
   }),
 
-  toolArgs: Annotation<Record<string, unknown> | undefined>({
+  toolArgs: Annotation<
+    Record<string, unknown> | undefined
+  >({
     reducer: (_, y) => y,
     default: () => undefined,
   }),
@@ -38,7 +40,9 @@ export const AgentStateAnnotation = Annotation.Root({
     default: () => undefined,
   }),
 
-  finalResponse: Annotation<string | undefined>({
+  finalResponse: Annotation<
+    string | undefined
+  >({
     reducer: (_, y) => y,
     default: () => undefined,
   }),
@@ -47,6 +51,24 @@ export const AgentStateAnnotation = Annotation.Root({
     reducer: (_, y) => y,
     default: () => false,
   }),
+
+  approvalId: Annotation<
+    string | undefined
+  >({
+    reducer: (_, y) => y,
+    default: () => undefined,
+  }),
+
+  approvalStatus: Annotation<
+    | "pending"
+    | "approved"
+    | "rejected"
+    | undefined
+  >({
+    reducer: (_, y) => y,
+    default: () => undefined,
+  }),
 });
 
-export type AgentState = typeof AgentStateAnnotation.State;
+export type AgentState =
+  typeof AgentStateAnnotation.State;

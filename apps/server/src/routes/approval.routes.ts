@@ -25,10 +25,11 @@ approvalRouter.post("/approve", async (req, res) => {
   let toolResult = null;
 
   if (execution) {
-    toolResult = await executeTool(
-      execution.selectedTool,
-      execution.toolArgs,
-    );
+    toolResult =
+      await executeTool(
+        execution.selectedTool,
+        execution.toolArgs,
+      );
 
     eventBus.emit(
       "approval.execution.completed",

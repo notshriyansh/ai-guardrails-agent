@@ -8,9 +8,12 @@ export async function memoryNode(
   console.log("Running memory retrieval node");
 
   try {
-    const result = await executeTool("search_memory", {
-      query: state.userMessage,
-    });
+    const result = await executeTool(
+      "search_memory",
+      {
+        query: state.userMessage,
+      },
+    );
 
     const raw = (result.content as any)?.[0]?.text;
 
@@ -30,7 +33,10 @@ export async function memoryNode(
       retrievedMemories: memories,
     };
   } catch (error) {
-    console.error("Memory retrieval failed:", error);
+    console.error(
+      "Memory retrieval failed:",
+      error,
+    );
 
     return {
       retrievedMemories: [],

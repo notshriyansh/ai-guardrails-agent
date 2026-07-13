@@ -35,7 +35,13 @@ export async function policyNode(
 
     return {
       requiresApproval: true,
-      finalResponse: `Execution requires approval (${decision.approvalId})`,
+
+      approvalId: decision.approvalId,
+
+      approvalStatus: "pending",
+
+      finalResponse:
+        `Execution requires approval (${decision.approvalId})`,
     };
   }
 

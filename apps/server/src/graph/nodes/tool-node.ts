@@ -22,24 +22,37 @@ export async function toolNode(
   }
 
   if (state.requiresApproval) {
-    console.log("Execution requires approval");
+    console.log(
+      "Execution requires approval",
+    );
 
     return {};
   }
 
   try {
-    console.log("Executing tool:", state.selectedTool);
-
-    console.log("Tool args:", state.toolArgs);
-
-    const result = await executeTool(
+    console.log(
+      "Executing tool:",
       state.selectedTool,
-      state.toolArgs || {},
     );
 
     console.log(
+      "Tool args:",
+      state.toolArgs,
+    );
+
+    const result =
+      await executeTool(
+        state.selectedTool,
+        state.toolArgs || {},
+      );
+
+    console.log(
       "Tool result:",
-      JSON.stringify(result, null, 2),
+      JSON.stringify(
+        result,
+        null,
+        2,
+      ),
     );
 
     return {

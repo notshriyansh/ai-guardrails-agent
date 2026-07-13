@@ -7,6 +7,21 @@ export async function responseNode(
 ): Promise<Partial<typeof AgentStateAnnotation.State>> {
   console.log("Running response node");
 
+  if (
+    state.requiresApproval &&
+    state.approvalStatus === "pending"
+  ) {
+    return {
+      finalResponse: JSON.stringify({
+        type: "approval_required",
+        approvalId:
+          state.approvalId,
+        tool:
+          state.selectedTool,
+      }),
+    };
+  }
+
   if (state.finalResponse) {
     return {};
   }
@@ -15,22 +30,33 @@ export async function responseNode(
 
   try {
     toolOutput =
-      (state.toolResult as any)?.content?.[0]?.text ||
-      JSON.stringify(state.toolResult);
+      (state.toolResult as any)
+        ?.content?.[0]?.text ||
+      JSON.stringify(
+        state.toolResult,
+      );
   } catch (error) {
-    console.error("Failed to parse tool output:", error);
+    console.error(
+      "Failed to parse tool output:",
+      error,
+    );
   }
 
-  console.log("Parsed tool output:", toolOutput);
+  console.log(
+    "Parsed tool output:",
+    toolOutput,
+  );
 
-  const completion = await groq.chat.completions.create({
-    model: "llama-3.3-70b-versatile",
+  const completion =
+    await groq.chat.completions.create({
+      model:
+        "llama-3.3-70b-versatile",
 
-    messages: [
-      {
-        role: "system",
+      messages: [
+        {
+          role: "system",
 
-        content: `
+          content: `
 You are an AI assistant.
 
 Answer the user using the provided tool output.
@@ -38,23 +64,25 @@ Answer the user using the provided tool output.
 If the tool output contains useful information,
 answer directly and clearly.
 `,
-      },
+        },
 
-      {
-        role: "user",
-        content: state.userMessage,
-      },
+        {
+          role: "user",
+          content:
+            state.userMessage,
+        },
 
-      {
-        role: "assistant",
-        content: `Tool output: ${toolOutput}`,
-      },
-    ],
-  });
+        {
+          role: "assistant",
+          content: `Tool output: ${toolOutput}`,
+        },
+      ],
+    });
 
   return {
     finalResponse:
-      completion.choices[0].message.content ||
+      completion.choices[0]
+        .message.content ||
       "No final response generated",
   };
 }
