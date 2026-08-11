@@ -6,14 +6,18 @@ import {
   getToolLogs,
 } from "../observability/log-store";
 
-export const logsRouter: Router = Router();
+export const logsRouter: Router =
+  Router();
 
 logsRouter.get("/", (_req, res) => {
   res.json({
-    conversations: getConversationLogs(),
+    conversations:
+      getConversationLogs(),
 
-    tools: getToolLogs(),
+    tools:
+      getToolLogs(),
 
-    policies: getPolicyLogs(),
+    policies:
+      getPolicyLogs(),
   });
 });

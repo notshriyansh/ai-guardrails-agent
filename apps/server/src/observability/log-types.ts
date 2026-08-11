@@ -9,11 +9,12 @@ export type ToolExecutionLog = {
   toolName: string;
   arguments: Record<string, unknown>;
   result?: unknown;
+
   status:
     | "success"
     | "failed"
     | "approval_required";
-    
+
   approvalId?: string;
   durationMs?: number;
   error?: string;
@@ -21,6 +22,8 @@ export type ToolExecutionLog = {
 };
 
 export type PolicyLog = {
+  id: string;
+
   type:
     | "allowed"
     | "denied"

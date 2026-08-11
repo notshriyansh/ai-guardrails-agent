@@ -10,8 +10,11 @@ import { logsRouter } from "./routes/logs.routes";
 import { createWebSocketServer } from "./websocket/websocket-server";
 import { eventBus } from "./events/event-bus";
 import { initializeMcpServers } from "./mcp/mcp-client";
+import { initializeDatabase } from "./db/init";
 
 async function bootstrap() {
+  initializeDatabase();
+
   const app = express();
 
   app.use(cors());
