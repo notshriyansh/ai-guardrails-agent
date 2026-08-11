@@ -1,11 +1,19 @@
+import crypto from "crypto";
+
 import { AgentStateAnnotation } from "../state";
 
 import { executeTool } from "../../mcp/mcp-client";
 
+import { addToolLog } from "../../observability/log-store";
+
 export async function toolNode(
   state: typeof AgentStateAnnotation.State,
-): Promise<Partial<typeof AgentStateAnnotation.State>> {
-  console.log("Running tool execution node");
+): Promise<
+  Partial<typeof AgentStateAnnotation.State>
+> {
+  console.log(
+    "Running tool execution node",
+  );
 
   if (state.finalResponse) {
     console.log(
@@ -16,7 +24,9 @@ export async function toolNode(
   }
 
   if (!state.selectedTool) {
-    console.log("No selected tool");
+    console.log(
+      "No selected tool",
+    );
 
     return {};
   }
@@ -29,22 +39,33 @@ export async function toolNode(
     return {};
   }
 
+  const toolName =
+    state.selectedTool;
+
+  const toolArgs =
+    state.toolArgs || {};
+
+  const startedAt = Date.now();
+
   try {
     console.log(
       "Executing tool:",
-      state.selectedTool,
+      toolName,
     );
 
     console.log(
       "Tool args:",
-      state.toolArgs,
+      toolArgs,
     );
 
     const result =
       await executeTool(
-        state.selectedTool,
-        state.toolArgs || {},
+        toolName,
+        toolArgs,
       );
+
+    const durationMs =
+      Date.now() - startedAt;
 
     console.log(
       "Tool result:",
@@ -55,20 +76,60 @@ export async function toolNode(
       ),
     );
 
+    addToolLog({
+      id: crypto.randomUUID(),
+
+      toolName,
+
+      arguments: toolArgs,
+
+      result,
+
+      status: "success",
+
+      durationMs,
+
+      timestamp:
+        new Date().toISOString(),
+    });
+
     return {
       toolResult: result,
     };
   } catch (error) {
+    const durationMs =
+      Date.now() - startedAt;
+
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Tool execution failed";
+
     console.error(
       "Tool execution failed:",
       error,
     );
 
+    addToolLog({
+      id: crypto.randomUUID(),
+
+      toolName,
+
+      arguments: toolArgs,
+
+      status: "failed",
+
+      durationMs,
+
+      error: errorMessage,
+
+      timestamp:
+        new Date().toISOString(),
+    });
+
     return {
       finalResponse:
-        error instanceof Error
-          ? error.message
-          : "Tool execution failed",
+        errorMessage,
     };
   }
 }
