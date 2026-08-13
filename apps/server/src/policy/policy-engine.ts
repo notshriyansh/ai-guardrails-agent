@@ -5,8 +5,12 @@ import {
   ToolExecutionRequest,
 } from "./policy-types";
 import { getPolicyState } from "./policy-store";
+import { toolPolicies } from "./tool-policy";
 import { createApproval } from "./approval-store";
 import { addPolicyLog } from "../observability/log-store";
+import {
+  validateCalculatorArguments,
+} from "./validators/calculator-validator";
 
 export async function evaluatePolicy(
   request: ToolExecutionRequest,
@@ -23,130 +27,130 @@ export async function evaluatePolicy(
     timestamp: new Date().toISOString(),
   });
 
-  const policyState = getPolicyState();
+  const toolPolicy =
+    toolPolicies[request.toolName];
+
+  if (!toolPolicy) {
+    const reason =
+      `Tool "${request.toolName}" has no registered security policy`;
+
+    addPolicyLog({
+      type: "denied",
+      toolName: request.toolName,
+      reason,
+      timestamp: new Date().toISOString(),
+    });
+
+    eventBus.emit("policy.denied", {
+      toolName: request.toolName,
+      reason,
+      timestamp: new Date().toISOString(),
+    });
+
+    return {
+      status: "denied",
+      reason,
+      risk: "critical",
+    };
+  }
+
+  const policyState =
+    getPolicyState();
 
   if (
     policyState.blockedTools.includes(
       request.toolName,
     )
   ) {
-    const decision = {
-      status: "denied" as const,
-
-      reason: `Tool "${request.toolName}" is blocked by policy`,
-    };
+    const reason =
+      `Tool "${request.toolName}" is blocked by policy`;
 
     addPolicyLog({
       type: "denied",
       toolName: request.toolName,
-      reason: decision.reason,
+      reason,
       timestamp: new Date().toISOString(),
     });
 
     eventBus.emit("policy.denied", {
-      ...decision,
       toolName: request.toolName,
+      reason,
+      risk: toolPolicy.risk,
+      capabilities:
+        toolPolicy.capabilities,
       timestamp: new Date().toISOString(),
     });
 
-    return decision;
+    return {
+      status: "denied",
+      reason,
+      risk: toolPolicy.risk,
+    };
   }
 
   if (request.toolName === "calculator") {
-    const expression = String(
-      request.arguments.expression ?? "",
-    );
-
-    console.log(
-      "[POLICY] Calculator expression:",
-      expression,
-    );
-
-    const dangerousPatterns = [
-      "process",
-      "require",
-      "global",
-      "import",
-      "fetch",
-      "eval",
-      "function",
-      "constructor",
-      "child_process",
-      "fs",
-      "exec",
-      "spawn",
-      "window",
-      "document",
-    ];
-
-    const matchedPattern =
-      dangerousPatterns.find((pattern) =>
-        expression
-          .toLowerCase()
-          .includes(pattern),
+    const validationError =
+      validateCalculatorArguments(
+        request.arguments,
       );
 
-    if (matchedPattern) {
-      console.log(
-        "[POLICY] BLOCKED calculator input. Matched:",
-        matchedPattern,
-      );
-
-      const decision = {
-        status: "denied" as const,
-
-        reason: `Suspicious calculator input detected (${matchedPattern})`,
-      };
-
+    if (validationError) {
       addPolicyLog({
         type: "denied",
         toolName: request.toolName,
-        reason: decision.reason,
-        timestamp: new Date().toISOString(),
+        reason: validationError,
+        timestamp:
+          new Date().toISOString(),
       });
 
       eventBus.emit("policy.denied", {
-        ...decision,
         toolName: request.toolName,
-        timestamp: new Date().toISOString(),
+        reason: validationError,
+        risk: toolPolicy.risk,
+        capabilities:
+          toolPolicy.capabilities,
+        timestamp:
+          new Date().toISOString(),
       });
 
-      return decision;
+      return {
+        status: "denied",
+        reason: validationError,
+        risk: toolPolicy.risk,
+      };
     }
-
-    console.log(
-      "[POLICY] Calculator input passed security checks",
-    );
   }
 
-  if (request.toolName === "get_weather") {
+  if (toolPolicy.requiresApproval) {
     const approvalId =
       crypto.randomUUID();
 
+    const reason =
+      `Tool "${request.toolName}" requires human approval`;
+
     createApproval({
       id: approvalId,
-      toolName: request.toolName,
-      arguments: request.arguments,
-      reason:
-        "Weather access requires approval",
+
+      toolName:
+        request.toolName,
+
+      arguments:
+        request.arguments,
+
+      reason,
+
       createdAt:
         new Date().toISOString(),
     });
 
-    const decision = {
-      status:
-        "requires_approval" as const,
-
-      approvalId,
-
-      reason:
-        "Human approval required",
-    };
-
     addPolicyLog({
       type: "approval_required",
-      toolName: request.toolName,
-      reason: decision.reason,
+
+      toolName:
+        request.toolName,
+
+      reason,
+
       timestamp:
         new Date().toISOString(),
     });
@@ -155,33 +159,67 @@ export async function evaluatePolicy(
       "policy.approval_requested",
       {
         approvalId,
+
         toolName:
           request.toolName,
+
+        risk:
+          toolPolicy.risk,
+
+        capabilities:
+          toolPolicy.capabilities,
+
         timestamp:
           new Date().toISOString(),
       },
     );
 
-    return decision;
-  }
+    return {
+      status: "requires_approval",
 
-  const decision = {
-    status: "allowed" as const,
-  };
+      approvalId,
+
+      reason,
+
+      risk:
+        toolPolicy.risk,
+
+      capabilities:
+        toolPolicy.capabilities,
+    };
+  }
 
   addPolicyLog({
     type: "allowed",
-    toolName: request.toolName,
+
+    toolName:
+      request.toolName,
+
     timestamp:
       new Date().toISOString(),
   });
 
   eventBus.emit("policy.allowed", {
-    toolName: request.toolName,
+    toolName:
+      request.toolName,
+
+    risk:
+      toolPolicy.risk,
+
+    capabilities:
+      toolPolicy.capabilities,
 
     timestamp:
       new Date().toISOString(),
   });
 
-  return decision;
+  return {
+    status: "allowed",
+
+    risk:
+      toolPolicy.risk,
+
+    capabilities:
+      toolPolicy.capabilities,
+  };
 }

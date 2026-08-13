@@ -68,6 +68,19 @@ export const AgentStateAnnotation = Annotation.Root({
     reducer: (_, y) => y,
     default: () => undefined,
   }),
+
+  policyRisk: Annotation<
+  "low" | "medium" | "high" | "critical" | undefined
+>({
+  reducer: (_, y) => y,
+  default: () => undefined,
+}),
+
+policyCapabilities: Annotation<string[]>({
+  reducer: (_, y) => y,
+  default: () => [],
+}),
+
 });
 
 export type AgentState =
